@@ -2,7 +2,7 @@
 /*
  * Global variables
  */
-/*
+
 $drush_path = exec('which drush');
 $pantheon_aliases = $_SERVER['HOME'] . '/.drush/pantheon.aliases.drushrc.php';
 $git = exec('which git');
@@ -20,9 +20,7 @@ if ((!file_exists($pantheon_aliases)) || (!is_readable($pantheon_aliases))) {
   print "Error: $pantheon_aliases doesn't exist or isn't readable\n";
   exit(1);
 }
-*/
 
-/*
 // Check terminus 2.0 version
 $terminus_version_cmd = "terminus cli version";
 exec($terminus_version_cmd, $output, $result);
@@ -40,7 +38,6 @@ if (($parts[0] < 0) || ($parts[1] < 3) || ($parts[2] < 4)) {
 }
 unset($output);
 unset($return);
- */
 
 $usage = <<<EOT
 
@@ -205,6 +202,64 @@ function step_05() {
 
   // Step process code
 
+}
+
+function step_08() {
+  global $list, $drush, $source_site_name, $source_site_uuid, $step_output;
+  $step_title = "*** " . __FUNCTION__ . " Refresh your drush aliases ***\n";
+  if ($list) {
+    print $step_title;
+    return;
+  }
+  else {
+    print "\n" . $step_title . "\n";
+  }
+
+  //no love from drush paliases lately...
+  $manual_download = TRUE;
+  $manual_message = wordwrap("Unable to assist with downloading your drush aliases from Pantheon. Please download them by visiting the Pantheon dashbaord and hit Y when you've got them. (No aborts).", 80);
+
+  if (!$manual_download) {
+    $psite_aliases_cmd = "$drush paliases";
+    exec($psite_aliases_cmd);
+    return;
+  }
+
+  // get team for site which yields user's UUID
+  $psite_team_cmd = "$drush psite-team " . $step_output['target_site_uuid'];
+  exec($psite_team_cmd, $output, $return);
+  preg_match("/([a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+)/", $output[1], $matches);
+  $user_uuid = $matches[1];
+  if ($return != 0) {
+    print "Can't find UUID for your Pantheon user.\n";
+    yesno($manual_message);
+  }
+  unset($output);
+  unset($return);
+
+  // Open browser at download url
+  $url_drush_aliases = "https://dashboard.getpantheon.com/users/$user_uuid/drush_aliases";
+
+  $help_msg = <<<EOT
+
+Note: In the save dialog, press "SHIFT+Command+."" to show/save hidden directories/files, which will allow you to save to ~/.drush/
+Otherwise, after the file downloads you can move it with a command like:
+
+  mv ~/Downloads/pantheon.aliases.drushrc.php ~/.drush/
+
+(Assuming ~/Downloads is your browser's default download directory.)
+
+EOT;
+
+  print $help_msg;
+  if (yesno("\nOpen the download url for your drush aliases?", TRUE)) {
+    exec("open $url_drush_aliases");
+  }
+  else {
+    print "Paste this url into your browser location bar:\n\t$url_drush_aliases\n";
+  }
+
+  yesno("Continue?");
 }
 
 // Other Functions
