@@ -45,6 +45,10 @@ USAGE:
 
 php $argv[0] \
 
+  Commonly used switches:
+  -s pantheon-site-name     # REQUIRED (Unless -L is used.) Source site name.
+
+  Step control switches:
   -L                        # List steps
   -B number                 # Begin with this step number
   -E number                 # End after this step number
@@ -57,12 +61,39 @@ php $argv[0] \
 EOT;
 
 $longopts = array();
-$shortopts = "B:E:S:Lh";
+$shortopts = "B:E:S:Lhs:";
 $options = getopt($shortopts, $longopts);
 
 if (in_array('h', array_keys($options))) {
   print $usage;
   exit(0);
+}
+
+// Site Name
+if (!in_array('L', array_keys($options))) {
+  if (!in_array('s', array_keys($options))) {
+    print "Required options missing:\n";
+    print $usage . "\n";
+    exit(1);
+  }
+  else {
+    $source_site_name = $options['s'];
+    $source_site_alias = '@pantheon.' . $source_site_name . '.dev';
+    if (in_array('u', array_keys($options))) {
+      $source_site_uuid = $options['u'];
+    }
+    else {
+      // Get the site's UUID on Pantheon
+      exec("$drush psite-uuid " . $source_site_name, $output, $return);
+      $uuid_extracted = explode(': ', $output[0]); //Explode to temp variable first or array_pop may give pass by reference warning
+      $source_site_uuid = array_pop($uuid_extracted);
+      if ($source_site_uuid == "No uuid found.") {
+        print "Error: No uuid found for $source_site_name\n";
+        exit(1);
+      }
+      unset($output);
+    }
+  }
 }
 
 $steps = array();
@@ -145,14 +176,27 @@ $steps = array_slice($steps, $begin, $end);
 // Step Functions
 
 function step_01() {
-  global $list, $step_output;
-  $step_title = "*** " . __FUNCTION__ . " Description of step ***\n";
+  // Sync live->dev
+  global $list, $source_site_name;
+  $step_title = "*** " . __FUNCTION__ . " Simple pattern for command execution ***\n";
   if ($list) {
     print $step_title;
     return;
   }
+  else {
+    print "\n" . $step_title . "\n";
+  }
 
-  // Step process code
+  $info_cmd = "terminus site info --site=" . $source_site_name;
+  // I like to always print out the command to facilitate error analysis
+  print $info_cmd . "\n";
+  exec($info_cmd, $output, $return);
+  if ($return != 0) {
+    print "Error: Problem with last command.\n";
+    exit(1);
+  }
+  // I like to always print command output
+  print implode("\n", $output) . "\n";
 
 }
 
