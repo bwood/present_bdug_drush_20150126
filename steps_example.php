@@ -60,7 +60,7 @@ php $argv[0] \
 EOT;
 
 $longopts = array();
-$shortopts = "B:E:S:L";
+$shortopts = "B:E:S:Lh";
 $options = getopt($shortopts, $longopts);
 
 if (in_array('h', array_keys($options))) {
@@ -148,7 +148,7 @@ $steps = array_slice($steps, $begin, $end);
 // Step Functions
 
 function step_01() {
-  global $list;
+  global $list, $step_output;
   $step_title = "*** " . __FUNCTION__ . " Description of step ***\n";
   if ($list) {
     print $step_title;
@@ -160,7 +160,7 @@ function step_01() {
 }
 
 function step_02() {
-  global $list;
+  global $list, $step_output;
   $step_title = "*** " . __FUNCTION__ . " Description of step ***\n";
   if ($list) {
     print $step_title;
@@ -172,7 +172,7 @@ function step_02() {
 }
 
 function step_03() {
-  global $list;
+  global $list, $step_output;
   $step_title = "*** " . __FUNCTION__ . " Description of step ***\n";
   if ($list) {
     print $step_title;
@@ -184,7 +184,7 @@ function step_03() {
 }
 
 function step_04() {
-  global $list;
+  global $list, $step_output;
   $step_title = "*** " . __FUNCTION__ . " Description of step ***\n";
   if ($list) {
     print $step_title;
@@ -196,7 +196,7 @@ function step_04() {
 }
 
 function step_05() {
-  global $list;
+  global $list, $step_output;
   $step_title = "*** " . __FUNCTION__ . " Description of step ***\n";
   if ($list) {
     print $step_title;
@@ -205,11 +205,6 @@ function step_05() {
 
   // Step process code
 
-}
-
-// Run the steps
-foreach ($steps as $step) {
-  $step();
 }
 
 // Other Functions
@@ -260,3 +255,13 @@ foreach ($steps as $step) {
     }
     return $input;
   }
+
+/*
+ * Execute steps
+ */
+foreach ($steps as $step) {
+  $out = $step();
+  if (is_array($out)) {
+    $step_output = array_merge($step_output, $out);
+  }
+}
